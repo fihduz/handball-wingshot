@@ -1,0 +1,47 @@
+
+Video analysis summary
+--------------------------------------------------------------------------------
+Path: D:\0202V1 - Trim.mp4
+  Status: OK
+  Resolution: 1920x1080
+  FPS: 50.0
+  Frame count: 1088
+  Duration (s): 21.76
+  Size (MB): 91.95
+  Avg bitrate (Mbps): 35.44681691176471
+  Avg frame (KB): 86.54008035098805
+  FOURCC: h264
+-
+Path: D:\Videoprojekt 2.mp4
+  Status: OK
+  Resolution: 1920x1080
+  FPS: 30.0
+  Frame count: 752
+  Duration (s): 25.066666666666666
+  Size (MB): 60.70
+  Avg bitrate (Mbps): 20.31417095744681
+  Avg frame (KB): 82.65857323179854
+  FOURCC: h264
+-
+Path: D:\AP - 0223\V2\MVI_0014.MP4
+  Status: OK
+  Resolution: 3840x2160
+  FPS: 25.0
+  Frame count: 696
+  Duration (s): 27.84
+  Size (MB): 492.65
+  Avg bitrate (Mbps): 148.4440313218391
+  Avg frame (KB): 724.8243716886674
+  FOURCC: h264
+-
+Path: D:\FA - 0223\V2\MVI_0035.MP4
+  Status: OK
+  Resolution: 1920x1080
+  FPS: 50.0
+  Frame count: 1608
+  Duration (s): 32.16
+  Size (MB): 134.44
+  Avg bitrate (Mbps): 35.0672104477612
+  Avg frame (KB): 85.61330675722948
+  FOURCC: h264
+-

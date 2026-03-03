@@ -1,0 +1,13 @@
+Python 3.14-64. 
+MediaPipe 0.10.32. 
+
+Run by" python config.py "in terminal 
+p for pause
+j for rewind
+l for wind forward
+r for reload pose search
+
+Explaination to AI, the videosequences are from handball practices,
+where leftwing players are shooting wingshots. The goal is to track the movement
+of the attacking player. The will be moving from left to right in the frame and
+jump then shoot the ball. No tracking of the ball is needed. 
