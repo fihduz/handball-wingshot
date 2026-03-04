@@ -4,11 +4,14 @@ from mediapipe.tasks.python.vision import RunningMode
 # -----------------------------
 # Video selection (ONLY change this line)
 # -----------------------------
-SELECTED_VIDEO = "vid3" 
+SELECTED_VIDEO = "fa2" 
 
 # Video registry: just paths
 VIDEO_PATHS = {
-    "vid3": r"D:\wingshot\DJ - 0303\V2\f4.mp4"
+    "app12": r"D:\wingshot\AP - 0223\V2\p11.mp4", #fungerar inte men 0.64 s airborne, precision i avstamp 
+    "djf4": r"D:\wingshot\DJ - 0303\V2\f4.mp4", #works
+    "fap12": r"D:\wingshot\FA - 0223\V2\p12.mp4", #works
+    "fa2": r"D:\Videoprojekt 2.mp4" #maja 0.6 s - tramp
 }
 
 
@@ -72,9 +75,9 @@ class Config:
         self.landing_frame_count = 2
 
         # Pose detection confidence
-        self.min_pose_detection_confidence = 0.3
-        self.min_pose_presence_confidence = 0.3
-        self.min_tracking_confidence = 0.3
+        self.min_pose_detection_confidence = 0.4
+        self.min_pose_presence_confidence = 0.4
+        self.min_tracking_confidence = 0.4
 
     def update_fps(self, fps: float):
         if fps and fps > 1.0:
@@ -96,60 +99,12 @@ def main():
     mp_handler = MediaPipeHandler(config)
     overlay = MediaPlayerOverlay(config)
 
-    # --- Area annotation step ---
-    from mediaplayer_area_annotation import AreaAnnotation
+    # Kontrollera att videon öppnas
     if not media_player.open():
         print(f"Error: Could not open video {config.video_path}")
         return
-
-    # Läs första framen
-    ret, frame = media_player.read_frame()
-    if not ret or frame is None:
-        print("Kunde inte läsa första framen för annotering.")
-        media_player.close()
-        return
-
-    annotator = AreaAnnotation(config.video_path)
-    window_name = "Annotera område (tryck ESC när klar)"
-    # Skala annoteringsbilden till rimlig storlek
-    if frame is not None:
-        temp_frame = cv2.resize(frame.copy(), (config.display_width, config.display_height))
     else:
-        temp_frame = None
-
-    def mouse_callback(event, x, y, flags, param):
-        if event == cv2.EVENT_LBUTTONDOWN and not annotator.done:
-            print(f"Klick vid pixel ({x}, {y})")
-            try:
-                real_x = float(input("Ange X (meter): "))
-                real_z = float(input("Ange Z (meter): "))
-            except Exception:
-                print("Ogiltigt värde, försök igen.")
-                return
-            # Justera pixelkoordinater till originalbildens skala
-            if temp_frame is not None and frame is not None:
-                scale_x = frame.shape[1] / config.display_width
-                scale_y = frame.shape[0] / config.display_height
-                px = int(x * scale_x)
-                py = int(y * scale_y)
-                annotator.add_point(px, py, real_x, real_z)
-                annotator.draw_overlay(temp_frame)
-                cv2.imshow(window_name, temp_frame)
-
-    cv2.namedWindow(window_name)
-    cv2.setMouseCallback(window_name, mouse_callback)
-
-    while not annotator.is_ready():
-        display_frame = temp_frame.copy() if temp_frame is not None else None
-        if display_frame is not None:
-            annotator.draw_overlay(display_frame)
-            cv2.imshow(window_name, display_frame)
-        key = cv2.waitKey(1)
-        if key == 27:  # ESC
-            break
-
-    annotator.save()
-    cv2.destroyWindow(window_name)
+        print("Video öppnad OK!")
 
     # --- Vanlig videoprocess startar ---
     print(f"Video: {config.fps}fps")
