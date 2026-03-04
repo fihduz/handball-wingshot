@@ -1,5 +1,4 @@
 import cv2
-from debug_overlay import DebugOverlay
 
 
 class MediaPlayer:
@@ -15,7 +14,9 @@ class MediaPlayer:
         self.pending_frame = None
         self.frame_count = None
         self.current_frame_index = -1
-        self.debug_overlay = DebugOverlay(config)
+        self._reset_requested = False
+        self._landing_requested = False
+        self._airborne_requested = False
 
     def open(self):
         self.cap = cv2.VideoCapture(self.config.video_path)
@@ -44,19 +45,7 @@ class MediaPlayer:
             self.current_frame_index = self.frame_idx - 1
         return ret, frame
 
-    def display_frame(self, frame, info_text="", state_text=""):
-        h, w = frame.shape[:2]
-        cv2.rectangle(frame, (5, 5), (400, 80), (0, 0, 0), -1)
-
-        speed_text = f"Speed: {self.config.playback_speed:.1f}x"
-        cv2.putText(frame, speed_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-
-        if info_text:
-            cv2.putText(frame, info_text, (10, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 2)
-
-        if state_text:
-            cv2.putText(frame, state_text, (10, 75), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)
-
+    def display_frame(self, frame):
         display = cv2.resize(frame, (self.config.display_width, self.config.display_height))
         cv2.imshow("PoseLandmarker", display)
 
@@ -65,16 +54,18 @@ class MediaPlayer:
 
         if key == ord("q"):
             return False
-        elif key in (ord("+"), ord("=")):
-            self.config.playback_speed = min(3.0, self.config.playback_speed + 0.1)
-        elif key == ord("-"):
-            self.config.playback_speed = max(0.1, self.config.playback_speed - 0.1)
+        elif key == ord("l"):
+            self._seek(1)
         elif key == ord("p"):
             self.is_paused = not self.is_paused
         elif key == ord("j"):
             self._seek(-1)
-        elif key == ord("l"):
-            self._seek(1)
+        elif key == ord("r"):
+            self._reset_requested = True
+        elif key == ord("m"):
+            self._landing_requested = True
+        elif key == ord("n"):
+            self._airborne_requested = True
         return True
 
     def _seek(self, delta):
