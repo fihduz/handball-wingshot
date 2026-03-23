@@ -1,13 +1,34 @@
-Python 3.14-64. 
-MediaPipe 0.10.32. 
+Python 3.14-64
+MediaPipe 0.10.32
 
-Run by" python config.py "in terminal 
-p for pause
-j for rewind
-l for wind forward
-r for reload pose search
+Activate venv (project dependencies):
+venv\\Scripts\\activate
 
-Explaination to AI, the videosequences are from handball practices,
-where leftwing players are shooting wingshots. The goal is to track the movement
-of the attacking player. The will be moving from left to right in the frame and
-jump then shoot the ball. No tracking of the ball is needed. 
+Run:
+python config.py
+
+Flow:
+1. Video starts playing.
+2. Press p to pause.
+3. Click 8 calibration points in order:
+	post, corner, 1a, 1b, 1c, 1d, 2a, 2b.
+4. Calibration is saved per video as JSON in calibrations/.
+5. Press p to continue playback.
+6. Press 3 at jump takeoff, press 3 again at landing.
+7. Overlay shows latest airtime and jump length (cm).
+
+Controls:
+p = pause/play
+j = step back
+l = step forward
+r = reset tracking
+1 = speed toggle
+3 = airborne toggle (start/stop jump window)
+u = undo last calibration point
+c = reset calibration for current video
+q = quit
+
+Context:
+The video sequences are from handball practice (left wing shots).
+The tracked player typically moves left-to-right, jumps, and shoots.
+Ball tracking is not required.

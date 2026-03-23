@@ -15,8 +15,10 @@ class MediaPlayer:
         self.frame_count = None
         self.current_frame_index = -1
         self._reset_requested = False
-        self._landing_requested = False
-        self._airborne_requested = False
+        self._speed_toggle_requested = False
+        self._airborne_toggle_requested = False
+        self._calibration_undo_requested = False
+        self._calibration_reset_requested = False
 
     def open(self):
         self.cap = cv2.VideoCapture(self.config.video_path)
@@ -62,10 +64,14 @@ class MediaPlayer:
             self._seek(-1)
         elif key == ord("r"):
             self._reset_requested = True
-        elif key == ord("m"):
-            self._landing_requested = True
-        elif key == ord("n"):
-            self._airborne_requested = True
+        elif key == ord("1"):
+            self._speed_toggle_requested = True
+        elif key == ord("3"):
+            self._airborne_toggle_requested = True
+        elif key == ord("u"):
+            self._calibration_undo_requested = True
+        elif key == ord("c"):
+            self._calibration_reset_requested = True
         return True
 
     def _seek(self, delta):

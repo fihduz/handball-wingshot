@@ -4,8 +4,7 @@ class StateMachine:
 
     Transitions:
         IDLE -> MOVING:     auto (feet move in X for 3 frames AND hips shift for 2 frames)
-        MOVING -> AIRBORNE: manual (user presses 'n')
-        AIRBORNE -> MOVING: manual (user presses 'm')
+        MOVING <-> AIRBORNE: manual toggle (user presses '3')
 
     Thresholds scale with torso height to handle perspective changes.
     """
@@ -79,14 +78,11 @@ class StateMachine:
 
     # ---- manual transitions ----
 
-    def mark_airborne(self):
-        """Called when user presses 'n' — MOVING -> AIRBORNE."""
+    def toggle_airborne(self):
+        """Called when user presses '3' — toggles MOVING <-> AIRBORNE."""
         if self.state == self.MOVING:
             self.state = self.AIRBORNE
-
-    def mark_landing(self):
-        """Called when user presses 'm' — AIRBORNE -> MOVING."""
-        if self.state == self.AIRBORNE:
+        elif self.state == self.AIRBORNE:
             self.state = self.MOVING
 
     def reset(self):
