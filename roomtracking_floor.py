@@ -8,18 +8,19 @@ import numpy as np
 class RoomTrackingFloor:
     """Floor-plane calibration and mapping between image pixels and floor coordinates (cm)."""
 
-    POINT_LABELS = ["post", "corner", "1a", "1b", "1c", "1d", "2a", "2b"]
+    POINT_LABELS = ["1a", "1b", "1c", "1d", "2a", "2b", "2c", "3a", "3b"]
 
     # Fixed real-world coordinates (cm) in click order
     REAL_WORLD_POINTS = [
-        (0, 0),      # post
-        (850, 0),    # corner
-        (258, 220),  # 1a
-        (358, 220),  # 1b
-        (458, 220),  # 1c
-        (558, 220),  # 1d
-        (258, 320),  # 2a
-        (358, 320),  # 2b
+        (0, 0),      # 1a 
+        (100, 0),    # 1b
+        (200, 0),   # 1c
+        (300, 0),  # 1d
+        (100, -100),  # 2b
+        (200, -100),  # 2c
+        (300, -100),  # 2d
+        (200, -200),  # 3c
+        (300, -200)  # 3d
     ]
 
     def __init__(self, video_path):

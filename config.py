@@ -8,11 +8,12 @@ SELECTED_VIDEO = "herf2"  # options: "app12", "djf3", "fap12", "p14f2", "herf1"
 
 # Video registry: just paths
 VIDEO_PATHS = {
-    "app12": r"D:\wingshot\AP - 0223\V2\p11.mp4", #fungerar inte men 0.64 s airborne, precision i avstamp 
+    "app12": r"D:\wingshot\PA - 0223\V2\p11.mp4", #fungerar inte men 0.64 s airborne, precision i avstamp 
     "djf3": r"D:\wingshot\DJ - 0303\V1\f1.mp4", #works
     "fap12": r"D:\wingshot\FA - 0223\V2\p12.mp4", #works
-    "p14f2": r"D:\wingshot\P14 - 0310\V1\p11.mp4",
-    "herf2": r"D:\wingshot\HER - 0317\V2\f2.mp4"
+    "p14f2": r"D:\wingshot\P14 - 0310\V2\p11.mp4",
+    "herf2": r"D:\wingshot\HER - 0317\V2\f2.mp4",
+    "herf1": r"D:\wingshot\HER - 0317\V2\f1.mp4",
 }
 
 
@@ -83,6 +84,9 @@ class Config:
         self.min_pose_presence_confidence = 0.4
         self.min_tracking_confidence = 0.4
 
+        # Feature flags (1/0)
+        self.enable_length_visual = 1
+
     def update_fps(self, fps: float):
         if fps and fps > 1.0:
             self.fps = float(fps)
@@ -98,6 +102,7 @@ def main():
     from mediapipe_handler import MediaPipeHandler
     from mediaplayer_overlay import MediaPlayerOverlay
     from roomtracking_floor import RoomTrackingFloor
+    from length_visual import LengthVisual
 
     config = Config()
     media_player = MediaPlayer(config)
@@ -105,6 +110,11 @@ def main():
     overlay = MediaPlayerOverlay(config)
     roomtracking_floor = RoomTrackingFloor(config.video_path)
     overlay.set_floor_tracker(roomtracking_floor)
+    length_visual = LengthVisual(config, enabled=bool(config.enable_length_visual))
+    overlay.set_length_visual(length_visual)
+
+    calibration_target = len(roomtracking_floor.REAL_WORLD_POINTS)
+    calibration_order = ", ".join(roomtracking_floor.POINT_LABELS)
 
     # Kontrollera att videon öppnas
     if not media_player.open():
@@ -113,7 +123,7 @@ def main():
     else:
         print("Video öppnad OK!")
 
-    # Kalibrerings-UI: klicka 8 punkter när videon är pausad
+    # Kalibrerings-UI: klicka alla kalibreringspunkter när videon är pausad
     def mouse_callback(event, x, y, flags, param):
         if event != cv2.EVENT_LBUTTONDOWN:
             return
@@ -143,7 +153,7 @@ def main():
     if roomtracking_floor.is_ready():
         print("Floor calibration loaded from file.")
     else:
-        print("Pause with 'p' and click 8 floor points in order: post, corner, 1a, 1b, 1c, 1d, 2a, 2b.")
+        print(f"Pause with 'p' and click {calibration_target} floor points in order: {calibration_order}.")
 
     frame_interval_ms = max(1, int(1000 / config.fps))
     virtual_timestamp_ms = 0
@@ -164,7 +174,7 @@ def main():
                 if not roomtracking_floor.is_ready():
                     label = roomtracking_floor.next_point_label()
                     progress = roomtracking_floor.point_count()
-                    info_line = f"Calibration {progress}/8 - click: {label}"
+                    info_line = f"Calibration {progress}/{calibration_target} - click: {label}"
                     cv2.putText(
                         annotated_frame,
                         info_line,
@@ -197,7 +207,7 @@ def main():
             if annotated_frame is not None and not roomtracking_floor.is_ready():
                 label = roomtracking_floor.next_point_label()
                 progress = roomtracking_floor.point_count()
-                info_line = f"Calibration {progress}/8 - click: {label}"
+                info_line = f"Calibration {progress}/{calibration_target} - click: {label}"
                 cv2.putText(
                     annotated_frame,
                     info_line,
@@ -250,7 +260,7 @@ def main():
             media_player._calibration_undo_requested = False
         if getattr(media_player, '_calibration_reset_requested', False):
             roomtracking_floor.reset()
-            print("Calibration reset. Pause and click 8 points again.")
+            print(f"Calibration reset. Pause and click {calibration_target} points again.")
             media_player._calibration_reset_requested = False
 
     media_player.close()

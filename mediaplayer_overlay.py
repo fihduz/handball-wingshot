@@ -12,9 +12,13 @@ class MediaPlayerOverlay:
         self.speed_data = SpeedData()
         self._last_frame_shape = None
         self.floor_tracker = None
+        self.length_visual = None
 
     def set_floor_tracker(self, floor_tracker):
         self.floor_tracker = floor_tracker
+
+    def set_length_visual(self, length_visual):
+        self.length_visual = length_visual
 
     def toggle_speed(self):
         self.speed_data.toggle()
@@ -51,6 +55,8 @@ class MediaPlayerOverlay:
     def toggle_airborne_timer(self, frame_index, tracked_pose):
         world_foot = self._get_left_foot_world(tracked_pose)
         self.airborne_data.toggle_by_frame(frame_index, self.config.fps, world_foot)
+        if self.length_visual is not None:
+            self.length_visual.update_toggle_point(world_foot)
 
     def draw(self, frame, tracker):
         """Draw state machine info on the frame."""
@@ -123,4 +129,7 @@ class MediaPlayerOverlay:
         cv2.putText(frame, text, (x, y1), font, scale, color, thickness)
         cv2.putText(frame, speed_text, (x, y2), font, scale, (255, 255, 255), thickness)
         cv2.putText(frame, airtime_text, (x, y3), font, scale, (255, 255, 255), thickness)
+
+        if self.length_visual is not None:
+            self.length_visual.draw(frame, self.floor_tracker)
 
