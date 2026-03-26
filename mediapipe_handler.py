@@ -11,11 +11,11 @@ class MediaPipeHandler:
         self.tracker = PlayerTracker(config)
         self.renderer = SkeletonRenderer(config)
 
-    def process(self, frame, timestamp_ms):
-        """Run full pipeline: detect → track → draw. Operates on frame in-place."""
+    def process(self, frame, timestamp_ms, draw_skeleton=False):
+        """Run full pipeline: detect → track, and optionally draw skeleton on the frame."""
         pose_result = self.detector.detect(frame, timestamp_ms)
         player = self.tracker.update(pose_result)
-        if player:
+        if draw_skeleton and player:
             self.renderer.draw(frame, player.landmarks)
 
     def reset_tracking(self):

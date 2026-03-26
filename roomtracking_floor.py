@@ -9,18 +9,19 @@ class RoomTrackingFloor:
     """Floor-plane calibration and mapping between image pixels and floor coordinates (cm)."""
 
     POINT_LABELS = ["1a", "1b", "1c", "1d", "2a", "2b", "2c", "3a", "3b"]
+    CALIBRATION_MODEL_VERSION = 2
 
     # Fixed real-world coordinates (cm) in click order
     REAL_WORLD_POINTS = [
-        (0, 0),      # 1a 
+        (0, 0),      # 1a
         (100, 0),    # 1b
-        (200, 0),   # 1c
-        (300, 0),  # 1d
-        (100, -100),  # 2b
-        (200, -100),  # 2c
-        (300, -100),  # 2d
-        (200, -200),  # 3c
-        (300, -200)  # 3d
+        (200, 0),    # 1c
+        (300, 0),    # 1d
+        (100, -100), # 2a
+        (200, -100), # 2b
+        (300, -100), # 2c
+        (200, -200), # 3a
+        (300, -200), # 3b
     ]
 
     def __init__(self, video_path):
@@ -89,6 +90,15 @@ class RoomTrackingFloor:
         mapped = cv2.perspectiveTransform(pt, self.homography)[0][0]
         return float(mapped[0]), float(mapped[1])
 
+    def floor_to_pixel(self, x, y):
+        if not self.ready or self.homography is None:
+            return None
+        h = np.asarray(self.homography, dtype=np.float64)
+        inv_h = np.linalg.inv(h)
+        pt = np.array([[[float(x), float(y)]]], dtype=np.float32)
+        mapped = cv2.perspectiveTransform(pt, inv_h)[0][0]
+        return float(mapped[0]), float(mapped[1])
+
     def is_ready(self):
         return self.ready
 
@@ -97,6 +107,7 @@ class RoomTrackingFloor:
 
     def save_calibration(self):
         data = {
+            "model_version": self.CALIBRATION_MODEL_VERSION,
             "pixel_points": self.pixel_points,
             "real_world_points": self.REAL_WORLD_POINTS,
             "labels": self.POINT_LABELS,
@@ -110,6 +121,21 @@ class RoomTrackingFloor:
 
         with self.calib_path.open("r", encoding="utf-8") as f:
             data = json.load(f)
+
+        # Prevent silent reuse of stale calibrations from a different point model.
+        loaded_version = data.get("model_version")
+        loaded_labels = data.get("labels")
+        loaded_world = data.get("real_world_points")
+        expected_world = [list(p) for p in self.REAL_WORLD_POINTS]
+        if (
+            loaded_version != self.CALIBRATION_MODEL_VERSION
+            or loaded_labels != self.POINT_LABELS
+            or loaded_world != expected_world
+        ):
+            self.pixel_points = []
+            self.homography = None
+            self.ready = False
+            return False
 
         loaded = data.get("pixel_points", [])
         self.pixel_points = [tuple(pt) for pt in loaded]

@@ -8,25 +8,27 @@ class AirborneData:
         self.last_airborne_frames = 0
         self.last_airborne_seconds = 0.0
         self.last_jump_len = None
+        self.last_jumping_point_cm = None
         self.last_jump_valid = False
+        self.history = []
         self.active = False
         self._start_frame = None
         self._start_world_foot = None
 
-    def toggle_by_frame(self, frame_index, fps, world_foot=None):
+    def toggle_by_frame(self, frame_index, fps, world_foot=None, reference_point=None):
         if frame_index is None:
-            return
+            return None
 
         if not self.active:
             self.active = True
             self._start_frame = int(frame_index)
             self._start_world_foot = world_foot
-            return
+            return None
 
         stop_frame = int(frame_index)
         if self._start_frame is None:
             self.active = False
-            return
+            return None
         frames = max(0, stop_frame - self._start_frame)
         self.last_airborne_frames = frames
         self.last_airborne_seconds = (frames / fps) if fps else 0.0
@@ -40,9 +42,26 @@ class AirborneData:
             self.last_jump_len = None
             self.last_jump_valid = False
 
+        # jumping_point_cm = distance between first press (takeoff foot) and point 1a.
+        if self._start_world_foot is not None and reference_point is not None:
+            tr = float(self._start_world_foot[0]) - float(reference_point[0])
+            ty = float(self._start_world_foot[1]) - float(reference_point[1])
+            self.last_jumping_point_cm = math.hypot(tr, ty)
+        else:
+            self.last_jumping_point_cm = None
+
         self.active = False
         self._start_frame = None
         self._start_world_foot = None
+
+        record = {
+            "frames": self.last_airborne_frames,
+            "airtime_s": self.last_airborne_seconds,
+            "jump_len_cm": self.last_jump_len,
+            "jumping_point_cm": self.last_jumping_point_cm,
+        }
+        self.history.append(record)
+        return record
 
     def get_last_airtime(self):
         return self.last_airborne_seconds
@@ -52,6 +71,13 @@ class AirborneData:
 
     def get_last_jump_len(self):
         return self.last_jump_len
+
+    def get_last_jumping_point_cm(self):
+        return self.last_jumping_point_cm
+
+    def get_last_takeoff_cm(self):
+        # Backward-compatible alias while callers migrate to jumping_point naming.
+        return self.last_jumping_point_cm
 
 
 class SpeedData:

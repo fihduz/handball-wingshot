@@ -1,21 +1,11 @@
 from pathlib import Path
 from mediapipe.tasks.python.vision import RunningMode
+from video_paths import VIDEO_PATHS
 
 # -----------------------------
 # Video selection (ONLY change this line)
 # -----------------------------
-SELECTED_VIDEO = "herf2"  # options: "app12", "djf3", "fap12", "p14f2", "herf1"
-
-# Video registry: just paths
-VIDEO_PATHS = {
-    "app12": r"D:\wingshot\PA - 0223\V2\p11.mp4", #fungerar inte men 0.64 s airborne, precision i avstamp 
-    "djf3": r"D:\wingshot\DJ - 0303\V1\f1.mp4", #works
-    "fap12": r"D:\wingshot\FA - 0223\V2\p12.mp4", #works
-    "p14f2": r"D:\wingshot\P14 - 0310\V2\p11.mp4",
-    "herf2": r"D:\wingshot\HER - 0317\V2\f2.mp4",
-    "herf1": r"D:\wingshot\HER - 0317\V2\f1.mp4",
-}
-
+SELECTED_VIDEO = "pav2p12"  # example keys: "herv1f1", "herv2p41", "fav2p12"
 
 class Config:
     """All configuration settings for video processing and pose detection."""
@@ -47,6 +37,9 @@ class Config:
         # Display settings
         self.display_width = 960 
         self.display_height = 540 
+        # Dedicated data window size (wider and shorter than video window).
+        self.data_display_width = 1120
+        self.data_display_height = 420
 
         # MediaPipe runtime
         self.running_mode = RunningMode.VIDEO
@@ -86,6 +79,7 @@ class Config:
 
         # Feature flags (1/0)
         self.enable_length_visual = 1
+        self.enable_csv_export = 1
 
     def update_fps(self, fps: float):
         if fps and fps > 1.0:
@@ -131,10 +125,10 @@ def main():
             return
         if roomtracking_floor.is_ready():
             return
-        if last_annotated_frame is None:
+        if last_video_frame is None:
             return
 
-        frame_h, frame_w = last_annotated_frame.shape[:2]
+        frame_h, frame_w = last_video_frame.shape[:2]
         px_x = (x / config.display_width) * frame_w
         px_y = (y / config.display_height) * frame_h
         ok, msg = roomtracking_floor.add_pixel_point(px_x, px_y)
@@ -157,83 +151,35 @@ def main():
 
     frame_interval_ms = max(1, int(1000 / config.fps))
     virtual_timestamp_ms = 0
-    last_annotated_frame = None
+    last_video_frame = None
 
     while media_player.is_open:
+        calibration_progress = roomtracking_floor.point_count()
+        calibration_next = roomtracking_floor.next_point_label()
+        calibration_ready = roomtracking_floor.is_ready()
+        overlay.set_calibration_status(calibration_progress, calibration_target, calibration_next, calibration_ready)
+
         if not media_player.is_paused or media_player.pending_frame is not None:
             ret, frame = media_player.read_frame()
             if not ret or frame is None:
                 break
 
-            annotated_frame = frame.copy() if frame is not None else None
-            if annotated_frame is not None:
-                mp_handler.process(annotated_frame, virtual_timestamp_ms)
-                overlay.draw(annotated_frame, mp_handler.tracker)
-
-                # Rita kalibreringshjälp på pausad bild tills kalibrering är klar
-                if not roomtracking_floor.is_ready():
-                    label = roomtracking_floor.next_point_label()
-                    progress = roomtracking_floor.point_count()
-                    info_line = f"Calibration {progress}/{calibration_target} - click: {label}"
-                    cv2.putText(
-                        annotated_frame,
-                        info_line,
-                        (20, annotated_frame.shape[0] - 30),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.9,
-                        (0, 255, 255),
-                        2,
-                    )
-
-                    for i, (px_x, px_y) in enumerate(roomtracking_floor.get_pixel_points()):
-                        cx = int(round(px_x))
-                        cy = int(round(px_y))
-                        cv2.circle(annotated_frame, (cx, cy), 6, (255, 255, 0), -1)
-                        cv2.putText(
-                            annotated_frame,
-                            roomtracking_floor.POINT_LABELS[i],
-                            (cx + 8, cy - 8),
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            0.6,
-                            (255, 255, 0),
-                            2,
-                        )
-
+            if frame is not None:
+                mp_handler.process(frame, virtual_timestamp_ms, draw_skeleton=True)
+                overlay.draw(frame, mp_handler.tracker)
+                if length_visual is not None:
+                    length_visual.draw(frame, roomtracking_floor)
                 virtual_timestamp_ms += frame_interval_ms
-                last_annotated_frame = annotated_frame
+                last_video_frame = frame
         else:
-            annotated_frame = last_annotated_frame
+            frame = last_video_frame
+            if frame is not None:
+                overlay.draw(frame, mp_handler.tracker)
+                if length_visual is not None:
+                    length_visual.draw(frame, roomtracking_floor)
 
-            if annotated_frame is not None and not roomtracking_floor.is_ready():
-                label = roomtracking_floor.next_point_label()
-                progress = roomtracking_floor.point_count()
-                info_line = f"Calibration {progress}/{calibration_target} - click: {label}"
-                cv2.putText(
-                    annotated_frame,
-                    info_line,
-                    (20, annotated_frame.shape[0] - 30),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.9,
-                    (0, 255, 255),
-                    2,
-                )
-
-                for i, (px_x, px_y) in enumerate(roomtracking_floor.get_pixel_points()):
-                    cx = int(round(px_x))
-                    cy = int(round(px_y))
-                    cv2.circle(annotated_frame, (cx, cy), 6, (255, 255, 0), -1)
-                    cv2.putText(
-                        annotated_frame,
-                        roomtracking_floor.POINT_LABELS[i],
-                        (cx + 8, cy - 8),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.6,
-                        (255, 255, 0),
-                        2,
-                    )
-
-        if annotated_frame is not None:
-            media_player.display_frame(annotated_frame)
+        if frame is not None:
+            media_player.display_frame(frame)
 
         was_paused = media_player.is_paused
         if not media_player.handle_input():
